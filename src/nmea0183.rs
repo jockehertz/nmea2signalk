@@ -9,22 +9,27 @@ pub enum SentenceError {
     EmptySentence,
 }
 
+pub enum Sentence {
+    Std(Vec<String>),
+    Ais(Vec<String>)
+}
+
 fn checksum(sentence) -> bool { 
     todo!()
 }
 
-pub fn parse_nmea0183(sentence: String) -> Result<Delta, SentenceError> {
-    let start = match sentence.chars().nth(0) {
-        Some(c) => c,
-        None => return Err(SentenceError::EmptySentence),
-    };
+pub fn parse_nmea0183(input: String) -> Result<Delta, SentenceError> {
 
-    let split = sentence.split(",");
+    let split = input.split(",");
 
     if ! sentence.is_ascii() {
         return Err(SentenceError::NonAsciiChar)
     }
-    if ! VALID_STARTS.contains(&start.to_string().as_str()) {
+    if input.starts_with("$") {
+        let sentence = Sentence::Std(split);
+    } else if input.starts_with("!") {
+        let sentence = Sentence::Ais(split);
+    } else {
         return Err(SentenceError::InvalidStartChar)
     }
 
