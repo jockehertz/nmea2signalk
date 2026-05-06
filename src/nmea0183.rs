@@ -1,6 +1,5 @@
 use crate::signalk::{Update, Delta};
 
-const VALID_STARTS: [&str; 2] = ["$", "!"];
 
 pub enum SentenceError {
     InvalidChecksum,
@@ -9,26 +8,35 @@ pub enum SentenceError {
     EmptySentence,
 }
 
-pub enum Sentence {
-    Std(Vec<String>),
-    Ais(Vec<String>)
+pub enum SentenceType {
+    Std,
+    Ais
+}
+pub struct Sentence {
+    kind: SentenceType,
+    data: Vec<String>,
+    checksum: u8,
 }
 
-fn checksum(sentence) -> bool { 
+fn checksum(sentence: Sentence) -> bool { 
     todo!()
 }
 
 pub fn parse_nmea0183(input: String) -> Result<Delta, SentenceError> {
 
-    let split = input.split(",");
+    let checksum_split = input.split("*").map(|s| s.to_string()).collect();
+    let text = checksum_split[0];
+    let checksum = checksum_split[1];
 
-    if ! sentence.is_ascii() {
+    let split = text.split(",").map(|s| s.to_string()).collect();
+
+    if ! input.is_ascii() {
         return Err(SentenceError::NonAsciiChar)
     }
-    if input.starts_with("$") {
-        let sentence = Sentence::Std(split);
+    let sentence = if input.starts_with("$") {
+        Sentence::Std(split)
     } else if input.starts_with("!") {
-        let sentence = Sentence::Ais(split);
+        Sentence::Ais(split)
     } else {
         return Err(SentenceError::InvalidStartChar)
     }
