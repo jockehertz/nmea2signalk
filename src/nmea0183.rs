@@ -24,22 +24,23 @@ fn checksum(sentence: Sentence) -> bool {
 
 pub fn parse_nmea0183(input: String) -> Result<Delta, SentenceError> {
 
-    let checksum_split = input.split("*").map(|s| s.to_string()).collect();
-    let text = checksum_split[0];
-    let checksum = checksum_split[1];
+    let checksum_split = input.split_once("*").ok_or(SentenceError::InvalidChecksum)?;
+    let text = checksum_split.0;
+    let checksum_str = checksum_split.1;
+    let checksum = u8::from_str_radix(checksum_str, 16).map_err(|_| SentenceError::InvalidChecksum)?;
 
     let split = text.split(",").map(|s| s.to_string()).collect();
 
     if ! input.is_ascii() {
         return Err(SentenceError::NonAsciiChar)
     }
-    let sentence = if input.starts_with("$") {
-        Sentence::Std(split)
+    let kind = if input.starts_with("$") {
+        SentenceType::Std
     } else if input.starts_with("!") {
-        Sentence::Ais(split)
+        SentenceType::Ais
     } else {
         return Err(SentenceError::InvalidStartChar)
-    }
+    };
 
     Ok(/* Delta */)
 }
