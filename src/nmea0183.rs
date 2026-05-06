@@ -41,7 +41,8 @@ fn parse_nmea0183(input: String) -> Result<Delta, SentenceError> {
     let checksum_split = input.split_once("*").ok_or(SentenceError::InvalidChecksum)?;
     let text = checksum_split.0;
     let payload = &text[1..];
-    let checksum_str = checksum_split.1;
+    // NMEA0183 sentences end with <CR><LF> (\r\n), this must be removed before parsing
+    let checksum_str = checksum_split.1.trim_end();
     let checksum = u8::from_str_radix(checksum_str, 16).map_err(|_| SentenceError::InvalidChecksum)?;
 
     if !validate_checksum(payload, checksum) {
