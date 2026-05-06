@@ -23,8 +23,16 @@ pub struct Sentence {
 }
 
 /// Checks if the checksum is valid
-fn checksum(sentence: Sentence) -> bool { 
-    todo!()
+fn checksum(payload: String, checksum: u8) -> bool { 
+    let mut calc: u8 = 0;
+    for b in payload.bytes() {
+        calc ^= b;
+    }
+    if calc == checksum {
+        true
+    } else {
+        false
+    }
 }
 
 /// Parses the nmea0183 sentence
