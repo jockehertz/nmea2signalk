@@ -10,7 +10,7 @@ pub struct Nmea0183Parser {
     pending_messages: HashMap<u8, PendingMessage>,
 }
 
-pub enum SentenceId {
+pub enum StdSentenceId {
     Aam,
     Alm,
     Apa,
@@ -91,24 +91,29 @@ pub enum SentenceId {
     Ztg,
 }
 
+pub enum AisId {
+    Own,
+    Other,
+}
+
 /// Errors in the sentences
 pub enum SentenceError {
     InvalidChecksum,
     InvalidStartChar,
     NonAsciiChar,
     EmptySentence,
+    UnknownSentenceId,
 }
 
 /// Types of sentences
 pub enum SentenceType {
-    Std,
-    Ais
+    Std(StdSentenceId),
+    Ais(AisId)
 }
 
 /// The struct for a sentence
 pub struct Nmea0183Sentence {
     talker_id: String,
-    sentence_id: SentenceId,
     kind: SentenceType,
     data: Vec<String>,
     checksum: u8,
@@ -121,6 +126,13 @@ fn validate_checksum(payload: &str, checksum: u8) -> bool {
         calc ^= b;
     }
     calc == checksum
+}
+
+/// Matches a sentence id to return a variant of SentenceId
+fn match_sentence(id: &str) -> Result<SentenceId, SentenceError> {
+    match id {
+        _ => Err(SentenceError::UnknownSentenceId),
+    }
 }
 
 /// Parses the nmea0183 sentence
@@ -152,6 +164,10 @@ impl FromStr for Nmea0183Sentence {
         };
 
         let split = payload.split(",").map(|s| s.to_string()).collect();
+
+        let ids = payload[0];
+        let talker = ids[0..2];
+        let sentence_id = match match_sentence(ids[2..])?;
 
         Ok(/* Nmea0183Sentence */)
     }
