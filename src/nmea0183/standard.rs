@@ -92,7 +92,7 @@ pub enum SentenceId {
 }
 
 /// Errors in the sentences
-enum SentenceError {
+pub enum SentenceError {
     InvalidChecksum,
     InvalidStartChar,
     NonAsciiChar,
@@ -100,13 +100,13 @@ enum SentenceError {
 }
 
 /// Types of sentences
-enum SentenceType {
+pub enum SentenceType {
     Std,
     Ais
 }
 
 /// The struct for a sentence
-struct Nmea0183Sentence {
+pub struct Nmea0183Sentence {
     talker_id: String,
     sentence_id: SentenceId,
     kind: SentenceType,
