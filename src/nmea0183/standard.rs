@@ -1,4 +1,4 @@
-use crate::signalk::{Update, Delta};
+use crate::signalk::{Delta, Update};
 use std::collections::HashMap;
 use std::str::FromStr;
 
@@ -10,6 +10,7 @@ pub struct Nmea0183Parser {
     pending_messages: HashMap<u8, PendingMessage>,
 }
 
+/// An enum of ids for standard sentences
 pub enum StdSentenceId {
     Aam,
     Alm,
@@ -108,7 +109,7 @@ pub enum SentenceError {
 /// Types of sentences
 pub enum SentenceType {
     Std(StdSentenceId),
-    Ais(AisId)
+    Ais(AisId),
 }
 
 /// The struct for a sentence
@@ -120,7 +121,7 @@ pub struct Nmea0183Sentence {
 }
 
 /// Checks if the checksum is valid
-fn validate_checksum(payload: &str, checksum: u8) -> bool { 
+fn validate_checksum(payload: &str, checksum: u8) -> bool {
     let mut calc: u8 = 0;
     for b in payload.bytes() {
         calc ^= b;
@@ -129,7 +130,7 @@ fn validate_checksum(payload: &str, checksum: u8) -> bool {
 }
 
 /// Matches a sentence id to return a variant of SentenceId
-fn match_sentence(id: &str) -> Result<SentenceId, SentenceError> {
+fn match_sentence(id: &str) -> Result<StdSentenceId, SentenceError> {
     match id {
         _ => Err(SentenceError::UnknownSentenceId),
     }
@@ -139,20 +140,22 @@ fn match_sentence(id: &str) -> Result<SentenceId, SentenceError> {
 impl FromStr for Nmea0183Sentence {
     type Err = SentenceError;
     fn from_str(input: &str) -> Result<Nmea0183Sentence, SentenceError> {
-
-        if ! input.is_ascii() {
-            return Err(SentenceError::NonAsciiChar)
+        if !input.is_ascii() {
+            return Err(SentenceError::NonAsciiChar);
         }
 
-        let checksum_split = input.split_once("*").ok_or(SentenceError::InvalidChecksum)?;
+        let checksum_split = input
+            .split_once("*")
+            .ok_or(SentenceError::InvalidChecksum)?;
         let text = checksum_split.0;
         let payload = &text[1..];
         // NMEA0183 sentences end with <CR><LF> (\r\n), this must be removed before parsing
         let checksum_str = checksum_split.1.trim_end();
-        let checksum = u8::from_str_radix(checksum_str, 16).map_err(|_| SentenceError::InvalidChecksum)?;
+        let checksum =
+            u8::from_str_radix(checksum_str, 16).map_err(|_| SentenceError::InvalidChecksum)?;
 
         if !validate_checksum(payload, checksum) {
-            return Err(SentenceError::InvalidChecksum)
+            return Err(SentenceError::InvalidChecksum);
         }
 
         let kind = if text.starts_with("$") {
@@ -160,14 +163,14 @@ impl FromStr for Nmea0183Sentence {
         } else if text.starts_with("!") {
             SentenceType::Ais
         } else {
-            return Err(SentenceError::InvalidStartChar)
+            return Err(SentenceError::InvalidStartChar);
         };
 
         let split = payload.split(",").map(|s| s.to_string()).collect();
 
         let ids = payload[0];
         let talker = ids[0..2];
-        let sentence_id = match match_sentence(ids[2..])?;
+        let sentence_id = match_sentence(ids[2..])?;
 
         Ok(/* Nmea0183Sentence */)
     }
