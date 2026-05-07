@@ -1,4 +1,13 @@
 use crate::signalk::{Update, Delta};
+use std::collections::HashMap;
+
+struct PendingMessage {
+    data: String,
+    counter: usize,
+}
+pub struct Nmea0183Parser {
+    pending_messages: HashMap<u8, PendingMessage>,
+}
 
 pub enum SentenceId {
     Aam,
@@ -145,6 +154,8 @@ fn parse_nmea0183(input: String) -> Result<Delta, SentenceError> {
 }
 
 /// Parses NMEA0183 raw string data to SignalK data
-pub fn nmea0183_to_signalk(sentence: String) -> Delta {
-    todo!()
+impl Nmea0183Parser {
+    pub fn nmea0183_to_signalk(sentence: String) -> Delta {
+        todo!()
+    }
 }
