@@ -11,6 +11,7 @@ pub struct Nmea0183Parser {
 }
 
 /// An enum of ids for standard sentences
+#[derive(Debug)]
 pub enum StdSentenceId {
     Aam,
     Alm,
@@ -92,6 +93,7 @@ pub enum StdSentenceId {
     Ztg,
 }
 
+#[derive(Debug)]
 pub enum AisId {
     Abm,
     Aca,
@@ -104,6 +106,7 @@ pub enum AisId {
 }
 
 /// Errors in the sentences
+#[derive(Debug)]
 pub enum SentenceError {
     InvalidChecksum,
     InvalidStartChar,
@@ -113,12 +116,14 @@ pub enum SentenceError {
 }
 
 /// Types of sentences
+#[derive(Debug)]
 pub enum SentenceType {
     Std(StdSentenceId),
     Ais(AisId),
 }
 
 /// The struct for a sentence
+#[derive(Debug)]
 pub struct Nmea0183Sentence {
     talker_id: String,
     kind: SentenceType,
@@ -241,6 +246,10 @@ impl FromStr for Nmea0183Sentence {
             return Err(SentenceError::NonAsciiChar);
         }
 
+        if !input.starts_with("!") && !input.starts_with("$") {
+            return Err(SentenceError::InvalidStartChar);
+        }
+
         let checksum_split = input
             .split_once("*")
             .ok_or(SentenceError::InvalidChecksum)?;
@@ -284,5 +293,52 @@ impl FromStr for Nmea0183Sentence {
 impl Nmea0183Parser {
     pub fn nmea0183_to_signalk(sentence: String) -> Delta {
         todo!()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_valid_checksum() {
+        // GPRMC with known good checksum
+        assert!(validate_checksum("GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W", 0x6A));
+    }
+
+    #[test]
+    fn test_invalid_checksum() {
+        assert!(!validate_checksum("GPRMC,123519,A", 0x00));
+    }
+    #[test]
+    fn test_parse_rmc() {
+        let sentence = "$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A"
+            .parse::<Nmea0183Sentence>();
+        assert!(sentence.is_ok());
+        let s = sentence.unwrap();
+        assert_eq!(s.talker_id, "GP");
+        assert!(matches!(s.kind, SentenceType::Std(StdSentenceId::Rmc)));
+    }
+
+    #[test]
+    fn test_parse_ais() {
+        let sentence = "!AIVDM,1,1,,A,15Muq@001oJr>tpE>f@EwvN20<0u,0*5B"
+            .parse::<Nmea0183Sentence>();
+        assert!(sentence.is_ok());
+        let s = sentence.unwrap();
+        assert_eq!(s.talker_id, "AI");
+        assert!(matches!(s.kind, SentenceType::Ais(AisId::Vdm)));
+    }
+
+    #[test]
+    fn test_invalid_checksum_error() {
+        let result = "$GPRMC,123519*00".parse::<Nmea0183Sentence>();
+        assert!(matches!(result, Err(SentenceError::InvalidChecksum)));
+    }
+
+    #[test]
+    fn test_invalid_start_char() {
+        let result = "GPRMC,123519*6A".parse::<Nmea0183Sentence>();
+        assert!(matches!(result, Err(SentenceError::InvalidStartChar)));
     }
 }
