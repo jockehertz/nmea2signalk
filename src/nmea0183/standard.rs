@@ -4,7 +4,7 @@ use std::str::FromStr;
 
 struct PendingMessage {
     data: String,
-    counter: usize,
+    parts_received: usize,
 }
 pub struct Nmea0183Parser {
     pending_messages: HashMap<u8, PendingMessage>,
@@ -93,8 +93,14 @@ pub enum StdSentenceId {
 }
 
 pub enum AisId {
-    Own,
-    Other,
+    Abm,
+    Aca,
+    Acs,
+    Afi,
+    Air,
+    Vdm,
+    Vdo,
+    Vsd,
 }
 
 /// Errors in the sentences
@@ -130,12 +136,103 @@ fn validate_checksum(payload: &str, checksum: u8) -> bool {
 }
 
 /// Matches a sentence id to return a variant of SentenceId
-fn match_sentence(id: &str) -> Result<StdSentenceId, SentenceError> {
+fn match_std_sentence(id: &str) -> Result<StdSentenceId, SentenceError> {
     match id {
+        "AAM" => Ok(StdSentenceId::Aam),
+        "ALM" => Ok(StdSentenceId::Alm),
+        "APA" => Ok(StdSentenceId::Apa),
+        "APB" => Ok(StdSentenceId::Apb),
+        "BOD" => Ok(StdSentenceId::Bod),
+        "BWC" => Ok(StdSentenceId::Bwc),
+        "BWR" => Ok(StdSentenceId::Bwr),
+        "BWW" => Ok(StdSentenceId::Bww),
+        "DBK" => Ok(StdSentenceId::Dbk),
+        "DBS" => Ok(StdSentenceId::Dbs),
+        "DBT" => Ok(StdSentenceId::Dbt),
+        "DCN" => Ok(StdSentenceId::Dcn),
+        "DPT" => Ok(StdSentenceId::Dpt),
+        "DTM" => Ok(StdSentenceId::Dtm),
+        "FSI" => Ok(StdSentenceId::Fsi),
+        "GBS" => Ok(StdSentenceId::Gbs),
+        "GGA" => Ok(StdSentenceId::Gga),
+        "GLC" => Ok(StdSentenceId::Glc),
+        "GLL" => Ok(StdSentenceId::Gll),
+        "GNS" => Ok(StdSentenceId::Gns),
+        "GRS" => Ok(StdSentenceId::Grs),
+        "GST" => Ok(StdSentenceId::Gst),
+        "GSA" => Ok(StdSentenceId::Gsa),
+        "GSV" => Ok(StdSentenceId::Gsv),
+        "GTD" => Ok(StdSentenceId::Gtd),
+        "GXA" => Ok(StdSentenceId::Gxa),
+        "HDG" => Ok(StdSentenceId::Hdg),
+        "HDM" => Ok(StdSentenceId::Hdm),
+        "HDT" => Ok(StdSentenceId::Hdt),
+        "HFB" => Ok(StdSentenceId::Hfb),
+        "HSC" => Ok(StdSentenceId::Hsc),
+        "ITS" => Ok(StdSentenceId::Its),
+        "LCD" => Ok(StdSentenceId::Lcd),
+        "MDA" => Ok(StdSentenceId::Mda),
+        "MSK" => Ok(StdSentenceId::Msk),
+        "MSS" => Ok(StdSentenceId::Mss),
+        "MTW" => Ok(StdSentenceId::Mtw),
+        "MWD" => Ok(StdSentenceId::Mwd),
+        "MWV" => Ok(StdSentenceId::Mwv),
+        "OLN" => Ok(StdSentenceId::Oln),
+        "OSD" => Ok(StdSentenceId::Osd),
+        "R00" => Ok(StdSentenceId::R00),
+        "RLM" => Ok(StdSentenceId::Rlm),
+        "RMA" => Ok(StdSentenceId::Rma),
+        "RMB" => Ok(StdSentenceId::Rmb),
+        "RMC" => Ok(StdSentenceId::Rmc),
+        "ROT" => Ok(StdSentenceId::Rot),
+        "RPM" => Ok(StdSentenceId::Rpm),
+        "RSA" => Ok(StdSentenceId::Rsa),
+        "RSD" => Ok(StdSentenceId::Rsd),
+        "RTE" => Ok(StdSentenceId::Rte),
+        "SFI" => Ok(StdSentenceId::Sfi),
+        "STN" => Ok(StdSentenceId::Stn),
+        "TDS" => Ok(StdSentenceId::Tds),
+        "TFI" => Ok(StdSentenceId::Tfi),
+        "TLB" => Ok(StdSentenceId::Tlb),
+        "TLL" => Ok(StdSentenceId::Tll),
+        "TPC" => Ok(StdSentenceId::Tpc),
+        "TPR" => Ok(StdSentenceId::Tpr),
+        "TPT" => Ok(StdSentenceId::Tpt),
+        "TRF" => Ok(StdSentenceId::Trf),
+        "TTM" => Ok(StdSentenceId::Ttm),
+        "VBW" => Ok(StdSentenceId::Vbw),
+        "VDR" => Ok(StdSentenceId::Vdr),
+        "VHW" => Ok(StdSentenceId::Vhw),
+        "VLW" => Ok(StdSentenceId::Vlw),
+        "VPW" => Ok(StdSentenceId::Vpw),
+        "VTG" => Ok(StdSentenceId::Vtg),
+        "VWR" => Ok(StdSentenceId::Vwr),
+        "WCV" => Ok(StdSentenceId::Wcv),
+        "WNC" => Ok(StdSentenceId::Wnc),
+        "WPL" => Ok(StdSentenceId::Wpl),
+        "XDR" => Ok(StdSentenceId::Xdr),
+        "XTE" => Ok(StdSentenceId::Xte),
+        "XTR" => Ok(StdSentenceId::Xtr),
+        "ZDA" => Ok(StdSentenceId::Zda),
+        "ZFO" => Ok(StdSentenceId::Zfo),
+        "ZTG" => Ok(StdSentenceId::Ztg),
         _ => Err(SentenceError::UnknownSentenceId),
     }
 }
 
+fn match_ais_sentence(id: &str) -> Result<AisId, SentenceError> {
+    match id {
+        "ABM" => Ok(AisId::Abm),
+        "ACA" => Ok(AisId::Aca),
+        "ACS" => Ok(AisId::Acs),
+        "AFI" => Ok(AisId::Afi),
+        "AIR" => Ok(AisId::Air),
+        "VDM" => Ok(AisId::Vdm),
+        "VDO" => Ok(AisId::Vdo),
+        "VSD" => Ok(AisId::Vsd),
+        _ => Err(SentenceError::UnknownSentenceId),
+    }
+}
 /// Parses the nmea0183 sentence
 impl FromStr for Nmea0183Sentence {
     type Err = SentenceError;
@@ -148,6 +245,7 @@ impl FromStr for Nmea0183Sentence {
             .split_once("*")
             .ok_or(SentenceError::InvalidChecksum)?;
         let text = checksum_split.0;
+
         let payload = &text[1..];
         // NMEA0183 sentences end with <CR><LF> (\r\n), this must be removed before parsing
         let checksum_str = checksum_split.1.trim_end();
@@ -158,21 +256,27 @@ impl FromStr for Nmea0183Sentence {
             return Err(SentenceError::InvalidChecksum);
         }
 
-        let kind = if text.starts_with("$") {
-            SentenceType::Std
+
+        let split: Vec<String> = payload.split(",").map(|s| s.to_string()).collect();
+
+        let ids = &split[0];
+        let talker = &ids[0..2];
+        let sentence_type = if text.starts_with("$") {
+            SentenceType::Std(match_std_sentence(&ids[2..])?)
         } else if text.starts_with("!") {
-            SentenceType::Ais
+            SentenceType::Ais(match_ais_sentence(&ids[2..])?)
         } else {
-            return Err(SentenceError::InvalidStartChar);
+            return Err(SentenceError::InvalidStartChar)
         };
 
-        let split = payload.split(",").map(|s| s.to_string()).collect();
+        let data = split[1..].to_vec();
 
-        let ids = payload[0];
-        let talker = ids[0..2];
-        let sentence_id = match_sentence(ids[2..])?;
-
-        Ok(/* Nmea0183Sentence */)
+        Ok(Nmea0183Sentence {
+            talker_id: talker.to_string(),
+            kind: sentence_type,
+            data,
+            checksum,
+        })
     }
 }
 
