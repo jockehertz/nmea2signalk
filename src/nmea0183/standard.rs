@@ -6,6 +6,7 @@ struct PendingMessage {
     data: String,
     parts_received: usize,
 }
+
 pub struct Nmea0183Parser {
     pending_messages: HashMap<u8, PendingMessage>,
 }
