@@ -27,7 +27,7 @@ pub fn parse(sentence: Nmea0183Sentence) -> Result<Delta, DataError> {
 
     match data[4].trim() {
         "N" => (),
-        "S" => latitude = -latutude,
+        "S" => latitude = -latitude,
         _ => return Err(DataError::InvalidCharacter),
     };
 
