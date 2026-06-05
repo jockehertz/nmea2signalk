@@ -36,6 +36,7 @@ pub fn parse(sentence: Nmea0183Sentence) -> Result<Delta, DataError> {
     match data[6].trim() {
         "E" => (),
         "W" => longitude = -longitude,
+         _ => return Err(DataError::InvalidCharacter),
     };
 
 }
