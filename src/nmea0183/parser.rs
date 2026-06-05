@@ -1,6 +1,18 @@
 use crate::signalk::{Delta, Update};
+use crate::nmea0183::sentences::*;
 use std::collections::HashMap;
 use std::str::FromStr;
+
+pub enum DataError {
+    InvalidCharacter,
+    InvalidFloat,
+}
+
+impl From<ParseFloatError> for DataError {
+    fn from() -> DataError {
+        DataError::InvalidFloat
+    }
+}
 
 struct PendingMessage {
     data: String,
@@ -126,10 +138,10 @@ pub enum SentenceType {
 /// The struct for a sentence
 #[derive(Debug)]
 pub struct Nmea0183Sentence {
-    talker_id: String,
-    kind: SentenceType,
-    data: Vec<String>,
-    checksum: u8,
+    pub talker_id: String,
+    pub kind: SentenceType,
+    pub data: Vec<String>,
+    pub checksum: u8,
 }
 
 /// Checks if the checksum is valid
