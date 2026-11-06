@@ -6,10 +6,11 @@ use std::str::FromStr;
 pub enum DataError {
     InvalidCharacter,
     InvalidFloat,
+    NavigationWarning,
 }
 
-impl From<ParseFloatError> for DataError {
-    fn from() -> DataError {
+impl From<std::num::ParseFloatError> for DataError {
+    fn from(_e: std::num::ParseFloatError) -> DataError {
         DataError::InvalidFloat
     }
 }
